@@ -15,6 +15,37 @@ model's real context limit, at a number you choose.
 With no `/autocompact` set for a session, the plugin does nothing and OpenCode's
 own automatic compaction applies as usual.
 
+## Install
+
+From this repository (not published to npm yet):
+
+```jsonc
+// ~/.config/opencode/opencode.json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    {
+      "package": "/absolute/path/to/opencode-autocompact",
+      "options": {
+        "minCheckIntervalMs": 2000,
+        "compactionTimeoutMs": 300000,
+        "debugEvents": false
+      }
+    }
+  ]
+}
+```
+
+Run `bun install` once in the plugin directory (the loader does not install
+dependencies for local-path entries). Source and config edits are hot-reloaded;
+changes to an unwatched local dependency may need `opencode2 service restart`.
+
+Once published to npm, prefer:
+
+```sh
+opencode plugin add opencode-autocompact
+```
+
 ## Why a plugin
 
 OpenCode's compaction settings are global config only:
