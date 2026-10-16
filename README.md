@@ -52,7 +52,7 @@ that, for one session, without touching anyone else's config.
 ## Install
 
 ```sh
-opencode plugin add @hacky.software/opencode-autocompact@0.1.0
+opencode plugin add @hacky.software/opencode-autocompact@0.1.1
 ```
 
 Or add it to `opencode.json` directly — string form, or the object form to pass

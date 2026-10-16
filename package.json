@@ -1,6 +1,6 @@
 {
   "name": "@hacky.software/opencode-autocompact",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Claude Code-style autocompact for OpenCode V2 with a per-session threshold: /autocompact 500k compacts a session and its children once the live context reaches that many tokens.",
   "type": "module",
   "license": "MIT",
