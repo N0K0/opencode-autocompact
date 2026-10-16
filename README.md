@@ -48,11 +48,14 @@ that, for one session, without touching anyone else's config.
   descendants, falling back to OpenCode's normal auto-compaction.
 - **Zero footprint by default.** With no threshold set for a session or any of
   its ancestors, the plugin does nothing at all.
+- **Visible when set.** When a threshold applies, a small chip joins the prompt
+  footer's status row (next to OpenCode's own context indicator), and a side
+  panel shows the numbers in detail.
 
 ## Install
 
 ```sh
-opencode plugin add @hacky.software/opencode-autocompact@0.1.2
+opencode plugin add @hacky.software/opencode-autocompact@0.1.3
 ```
 
 Or add it to `opencode.json` directly — string form, or the object form to pass
@@ -176,11 +179,29 @@ compaction threshold set to 5k for ses_… and its children (model limit 131.1k)
 compaction requested (ses_…) — used 7686 >= threshold 5000
 ```
 
+## TUI
+
+The plugin also ships a CLI (TUI) half:
+
+- **Footer chip** — a contribution to `prompt.footer.status`, appended *after*
+  OpenCode's own context indicator (the built-in readout is never replaced). It
+  reads `autocompact <used>/<threshold>` for a session with a threshold, or
+  `autocompact off` where the plugin was switched off. Sessions with nothing set
+  show no chip at all.
+- **Side panel** — `Autocompact: open side panel` (command palette) docks a
+  panel named `autocompact.status` showing the mode, the threshold, whether it is
+  the session's own or inherited, the live context size, and the model's limit.
+
+Both are fed by a small RPC: the server half owns the threshold and answers
+`status`; `/autocompact` emits `updated` so the chip and panel refresh the moment
+you set or clear a threshold. The panel polls while open so the live context
+number stays current.
+
 ## Development
 
 ```sh
 bun install
-bun test            # 32 unit tests
+bun test            # 38 unit tests
 bun run typecheck
 ```
 

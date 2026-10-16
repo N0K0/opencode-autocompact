@@ -80,3 +80,33 @@ describe("resolver inheritance", () => {
     expect(await resolver.effective("a")).toBeUndefined()
   })
 })
+
+describe("resolver.resolve", () => {
+  // root -> child -> grandchild
+  const parents: Record<string, string | undefined> = { child: "root", grandchild: "child", root: undefined }
+
+  test("reports the entry kind and whether it is the session's own", async () => {
+    const store = makeThresholdStore(fakeStorage())
+    const resolver = makeResolver(store, async (id) => parents[id])
+    await store.setLimit("root", 500_000)
+
+    expect(await resolver.resolve("root")).toEqual({ kind: "limit", threshold: 500_000, own: true })
+    expect(await resolver.resolve("child")).toEqual({ kind: "limit", threshold: 500_000, own: false })
+    expect(await resolver.resolve("grandchild")).toEqual({ kind: "limit", threshold: 500_000, own: false })
+  })
+
+  test("off is reported too, with its own/inherited flag", async () => {
+    const store = makeThresholdStore(fakeStorage())
+    const resolver = makeResolver(store, async (id) => parents[id])
+    await store.setOff("child")
+
+    expect(await resolver.resolve("child")).toEqual({ kind: "off", own: true })
+    expect(await resolver.resolve("grandchild")).toEqual({ kind: "off", own: false })
+  })
+
+  test("an unconfigured session resolves to none", async () => {
+    const store = makeThresholdStore(fakeStorage())
+    const resolver = makeResolver(store, async (id) => parents[id])
+    expect(await resolver.resolve("grandchild")).toEqual({ kind: "none" })
+  })
+})

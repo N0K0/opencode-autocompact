@@ -12,6 +12,7 @@ import { Plugin } from "@opencode/plugin"
 import { handleAutocompact } from "./command"
 import { log } from "./log"
 import { parseOptions } from "./options"
+import { registerAutocompactRpc } from "./rpc"
 import { makeResolver, makeThresholdStore } from "./thresholds"
 import { createWatcher } from "./watch"
 
@@ -88,6 +89,10 @@ export default Plugin.define({
                 modelLimit,
               })
               instanceLog(result.ok ? result.message : `rejected: ${result.message}`)
+              // Nudge the TUI chip/panel so they reflect the new threshold.
+              if (result.ok && (result.action === "set" || result.action === "off")) {
+                rpcRegistration?.emit("updated", { sessionID: input.sessionID })
+              }
             } catch (error) {
               instanceLog(`command failed (${input.sessionID}): ${String(error)}`)
             }
@@ -99,6 +104,18 @@ export default Plugin.define({
       instanceLog(`command registration failed: ${String(error)}`)
     }
 
+    // RPC for the TUI chip / side panel; best-effort so a failure never blocks
+    // the compaction behaviour itself.
+    const rpcRegistration = await registerAutocompactRpc(ctx, {
+      resolver,
+      modelLimit,
+      context: async (sessionID) => await ctx.session.context({ sessionID }),
+      log: instanceLog,
+    }).catch((error) => {
+      instanceLog(`rpc registration failed: ${String(error)}`)
+      return undefined
+    })
+
     const ac = new AbortController()
     void runEventLoop(ctx, watcher, options, instanceLog, ac.signal)
 
@@ -109,6 +126,13 @@ export default Plugin.define({
       instanceLog("cleanup")
       ac.abort()
       watcher.dispose()
+      if (rpcRegistration) {
+        try {
+          await rpcRegistration.dispose()
+        } catch (error) {
+          instanceLog(`rpc dispose failed: ${String(error)}`)
+        }
+      }
       if (commandRegistration) {
         try {
           await commandRegistration.dispose()

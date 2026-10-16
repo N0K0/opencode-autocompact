@@ -1,6 +1,6 @@
 {
   "name": "@hacky.software/opencode-autocompact",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Claude Code-style autocompact for OpenCode V2 with a per-session threshold: /autocompact 500k compacts a session and its children once the live context reaches that many tokens.",
   "type": "module",
   "license": "MIT",
@@ -27,11 +27,14 @@
     "access": "public"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./rpc": "./src/rpc.ts",
+    "./tui": "./src/tui.tsx"
   },
   "files": [
     "src",
     "index.ts",
+    "tui.ts",
     "README.md",
     "LICENSE"
   ],
@@ -41,6 +44,11 @@
   },
   "dependencies": {
     "@opencode/plugin": "2.0.24"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.5.14",
+    "@opentui/solid": ">=0.5.14",
+    "solid-js": ">=1.9.0"
   },
   "devDependencies": {
     "@types/bun": "^1.4.3",

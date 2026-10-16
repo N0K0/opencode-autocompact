@@ -64,7 +64,15 @@ export function makeThresholdStore(storage: StorageLike): ThresholdStore {
 /** Resolve a session's `parentID` (used to inherit from ancestors). */
 export type SessionParentLookup = (sessionID: string) => Promise<string | undefined>
 
+/** Full resolution of a session's threshold, including where it came from. */
+export type Resolution =
+  | { kind: "limit"; threshold: number; own: boolean }
+  | { kind: "off"; own: boolean }
+  | { kind: "none" }
+
 export interface Resolver {
+  /** Full resolution (threshold / off / none) plus whether it was set on this session. */
+  resolve(sessionID: string): Promise<Resolution>
   /** Effective threshold, or undefined when the plugin should stay out of the way. */
   effective(sessionID: string): Promise<number | undefined>
   /** Drop the memoized results (call after any threshold write or delete). */
@@ -74,33 +82,42 @@ export interface Resolver {
 const MAX_DEPTH = 64
 
 export function makeResolver(store: ThresholdStore, lookupParent: SessionParentLookup): Resolver {
-  const cache = new Map<string, number | undefined>()
+  const cache = new Map<string, Resolution>()
 
-  async function resolve(sessionID: string): Promise<number | undefined> {
+  async function compute(sessionID: string): Promise<Resolution> {
     const seen = new Set<string>()
     let current: string | undefined = sessionID
     let depth = 0
 
     while (current && depth < MAX_DEPTH && !seen.has(current)) {
       seen.add(current)
+      const own = depth === 0
       const entry = await store.get(current)
-      if (entry) return entry.kind === "off" ? undefined : entry.threshold
+      if (entry) {
+        return entry.kind === "off" ? { kind: "off", own } : { kind: "limit", threshold: entry.threshold, own }
+      }
       current = await lookupParent(current)
       depth += 1
     }
-    return undefined
+    return { kind: "none" }
   }
 
-  return {
-    async effective(sessionID) {
-      if (cache.has(sessionID)) return cache.get(sessionID)
-      const value = await resolve(sessionID)
+  const resolver: Resolver = {
+    async resolve(sessionID) {
+      const cached = cache.get(sessionID)
+      if (cached) return cached
+      const value = await compute(sessionID)
       cache.set(sessionID, value)
       return value
+    },
+    async effective(sessionID) {
+      const resolution = await resolver.resolve(sessionID)
+      return resolution.kind === "limit" ? resolution.threshold : undefined
     },
     invalidate(sessionID) {
       if (sessionID === undefined) cache.clear()
       else cache.delete(sessionID)
     },
   }
+  return resolver
 }
