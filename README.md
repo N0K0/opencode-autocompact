@@ -55,7 +55,7 @@ that, for one session, without touching anyone else's config.
 ## Install
 
 ```sh
-opencode plugin add @hacky.software/opencode-autocompact@0.1.4
+opencode plugin add @hacky.software/opencode-autocompact@0.1.5
 ```
 
 Or add it to `opencode.json` directly — string form, or the object form to pass
@@ -194,8 +194,11 @@ The plugin also ships a CLI (TUI) half:
 
 Both are fed by a small RPC: the server half owns the threshold and answers
 `status`; `/autocompact` emits `updated` so the chip and panel refresh the moment
-you set or clear a threshold. The panel polls while open so the live context
-number stays current.
+you set or clear a threshold. The chip also follows the session event stream —
+it refreshes on `session.usage.updated` and on both compaction edges — so the
+live context number tracks each turn and drops back down after a compaction,
+inline with OpenCode's own context readout (the panel additionally polls while
+open).
 
 ## Development
 

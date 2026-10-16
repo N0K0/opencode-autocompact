@@ -87,10 +87,51 @@ function register(context: Context) {
     }
   }
 
+  // Usage events are frequent and a compaction fires several events in a burst,
+  // so coalesce refreshes per session instead of hammering the RPC.
+  const timers = new Set<ReturnType<typeof setTimeout>>()
+  const later = (fn: () => void, ms: number) => {
+    const timer = setTimeout(() => {
+      timers.delete(timer)
+      fn()
+    }, ms)
+    timers.add(timer)
+  }
+  const pending = new Set<string>()
+  const scheduleRefresh = (sessionID: string) => {
+    if (pending.has(sessionID)) return
+    pending.add(sessionID)
+    later(() => {
+      pending.delete(sessionID)
+      void refresh(sessionID)
+    }, 250)
+  }
+
   const offUpdated = rpc.events.on("updated", (event: { data?: unknown }) => {
     const sessionID = (event.data as { sessionID?: unknown } | undefined)?.sessionID
     if (typeof sessionID === "string") void refresh(sessionID)
   })
+
+  // Keep the chip in step with the live context size: refresh whenever the
+  // session reports usage (the signal the host's own context readout follows).
+  // Without this the chip only ever fetched once per session and went stale
+  // after the first turn.
+  const onSessionEvent = (event: { data?: { sessionID?: string } }) => {
+    const sessionID = event.data?.sessionID
+    if (typeof sessionID === "string") scheduleRefresh(sessionID)
+  }
+  const offUsage = context.data.on("session.usage.updated", onSessionEvent)
+
+  // Compaction replaces the context outright. Refresh on both edges, and once
+  // more a beat later in case the message list lands just after the event.
+  const onCompaction = (event: { data?: { sessionID?: string } }) => {
+    const sessionID = event.data?.sessionID
+    if (typeof sessionID !== "string") return
+    scheduleRefresh(sessionID)
+    later(() => void refresh(sessionID), 1500)
+  }
+  const offCompactionEnded = context.data.on("session.compaction.ended", onCompaction)
+  const offCompactionFailed = context.data.on("session.compaction.failed", onCompaction)
 
   // ---- footer chip --------------------------------------------------------
 
@@ -185,6 +226,12 @@ function register(context: Context) {
   log("tui", "ready")
   return () => {
     offUpdated()
+    offUsage()
+    offCompactionEnded()
+    offCompactionFailed()
+    for (const timer of timers) clearTimeout(timer)
+    timers.clear()
+    pending.clear()
     disposeChip()
     disposePanel()
     log("tui", "disposed")
