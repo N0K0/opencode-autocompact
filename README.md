@@ -52,7 +52,7 @@ that, for one session, without touching anyone else's config.
 ## Install
 
 ```sh
-opencode plugin add @hacky.software/opencode-autocompact@0.1.1
+opencode plugin add @hacky.software/opencode-autocompact@0.1.2
 ```
 
 Or add it to `opencode.json` directly — string form, or the object form to pass
@@ -75,16 +75,13 @@ options:
 }
 ```
 
-### Development
-
-To run from a checkout instead, point the config at the directory. The loader
+To run from a checkout instead, point the config at the directory (the loader
 does not install dependencies for local-path entries, so run `bun install` once
-inside it. Source and config edits are hot-reloaded; changes to an unwatched
-local dependency may need `opencode2 service restart`.
+inside it):
 
 ```jsonc
 {
-  "plugins": [{ "package": "/absolute/path/to/opencode-autocompact" }]
+  "plugins": [{ "package": "/path/to/opencode-autocompact" }]
 }
 ```
 
@@ -187,8 +184,8 @@ bun test            # 32 unit tests
 bun run typecheck
 ```
 
-Changes under `~/git/autocompact` are outside OpenCode's watched config
-directories, so the running V2 service must be restarted to pick them up:
+If a checkout sits outside OpenCode's watched config directories, edits may not
+be picked up automatically — restart the service:
 
 ```sh
 opencode2 service restart
