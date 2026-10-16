@@ -141,6 +141,13 @@ function register(context: Context) {
       const sessionID = props.sessionID
       if (sessionID) void refresh(sessionID)
     })
+    // Safety net: even if a host build does not forward an event to TUI plugins,
+    // the visible chip still catches up within a few seconds.
+    const poll = setInterval(() => {
+      const sessionID = props.sessionID
+      if (sessionID) void refresh(sessionID)
+    }, 4000)
+    onCleanup(() => clearInterval(poll))
     const label = () => (props.sessionID ? chipLabel(statuses()[props.sessionID]) : undefined)
     return (
       <Show when={label()}>
