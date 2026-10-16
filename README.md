@@ -51,7 +51,12 @@ that, for one session, without touching anyone else's config.
 
 ## Install
 
-From this repository (not published to npm yet):
+```sh
+opencode plugin add @hacky.software/opencode-autocompact@0.1.0
+```
+
+Or add it to `opencode.json` directly — string form, or the object form to pass
+options:
 
 ```jsonc
 // ~/.config/opencode/opencode.json
@@ -59,7 +64,7 @@ From this repository (not published to npm yet):
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "/absolute/path/to/opencode-autocompact",
+      "package": "@hacky.software/opencode-autocompact",
       "options": {
         "minCheckIntervalMs": 2000,
         "compactionTimeoutMs": 300000,
@@ -70,15 +75,17 @@ From this repository (not published to npm yet):
 }
 ```
 
-- Run `bun install` once in the plugin directory (the loader does not install
-  dependencies for local-path entries).
-- Source and config edits are hot-reloaded by the running service; changes to an
-  unwatched local dependency may need `opencode2 service restart`.
+### Development
 
-Once published to npm, prefer:
+To run from a checkout instead, point the config at the directory. The loader
+does not install dependencies for local-path entries, so run `bun install` once
+inside it. Source and config edits are hot-reloaded; changes to an unwatched
+local dependency may need `opencode2 service restart`.
 
-```sh
-opencode plugin add opencode-autocompact
+```jsonc
+{
+  "plugins": [{ "package": "/absolute/path/to/opencode-autocompact" }]
+}
 ```
 
 ## Usage
