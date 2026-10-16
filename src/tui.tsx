@@ -20,9 +20,6 @@ import { log } from "./log"
 import { formatTokens } from "./parse"
 import { AutocompactRpc, type RpcStatus } from "./rpc"
 
-/** Plugin-scoped log line (the server logger prefixes `[autocompact]`). */
-const logFile = (...args: unknown[]) => log("tui", ...args)
-
 /** Defensive theme reader: unknown token shapes degrade to no color. */
 function themeColor(theme: unknown, path: string): string | undefined {
   let node: unknown = theme
@@ -59,14 +56,14 @@ export default Plugin.define({
     try {
       return register(context)
     } catch (error) {
-      logFile("tui", `setup failed: ${String(error)}`)
+      log("tui", `setup failed: ${String(error)}`)
       return () => {}
     }
   },
 })
 
 function register(context: Context) {
-  logFile("tui", "setup", context.app.version ?? "")
+  log("tui", "setup", context.app.version ?? "")
   const rpc = context.client.rpc(AutocompactRpc)
   // Snapshot per session; only `status` populates it, so it never goes stale
   // without a matching refresh.
@@ -76,7 +73,7 @@ function register(context: Context) {
     try {
       context.ui.toast.show({ title: "autocompact", message, variant })
     } catch (error) {
-      logFile("tui", `toast failed: ${String(error)}`)
+      log("tui", `toast failed: ${String(error)}`)
     }
   }
 
@@ -86,7 +83,7 @@ function register(context: Context) {
       if (!result || result.sessionID !== sessionID) return
       setStatuses((previous) => ({ ...previous, [sessionID]: result }))
     } catch (error) {
-      logFile("tui", `refresh(${sessionID}) failed: ${String(error)}`)
+      log("tui", `refresh(${sessionID}) failed: ${String(error)}`)
     }
   }
 
@@ -165,7 +162,7 @@ function register(context: Context) {
       </Show>
     ),
   })
-  logFile("tui", "slots registered (prompt.footer.status, session.panel autocompact.status)")
+  log("tui", "slots registered (prompt.footer.status, session.panel autocompact.status)")
 
   context.keymap.layer(() => ({
     mode: "global",
@@ -185,11 +182,11 @@ function register(context: Context) {
     ],
   }))
 
-  logFile("tui", "ready")
+  log("tui", "ready")
   return () => {
     offUpdated()
     disposeChip()
     disposePanel()
-    logFile("tui", "disposed")
+    log("tui", "disposed")
   }
 }
