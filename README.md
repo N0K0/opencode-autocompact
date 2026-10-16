@@ -96,28 +96,11 @@ in the TUI; its outcome is written to the log (see below).
 
 ## How it works
 
-The plugin has two halves: a **command** that records thresholds, and a
-**watcher** that reacts to the session event stream.
-
-```
-       /autocompact 500k                          model call finishes
-              │                                          │
-              ▼                                          ▼
-   ┌────────────────────┐                    ┌────────────────────────┐
-   │ threshold store    │                    │ session.usage.updated  │
-   │ autocompact/       │◀── effective() ────│  (coalesced per session)│
-   │  threshold/<ses>   │                    └───────────┬────────────┘
-   └────────────────────┘                                │
-              ▲                                          ▼
-              │                            ┌────────────────────────────┐
-        parentID walk                      │ live context >= threshold? │
-     (inheritance + `off`)                 └───────────┬────────────────┘
-                                                       │ yes, and nothing
-                                                       │ already in flight
-                                                       ▼
-                                          ctx.session.compact({ sessionID })
-                                          → runs at the next safe point
-```
+The plugin has two halves: a **command** that records thresholds in plugin
+storage, and a **watcher** that reacts to the session event stream. When a model
+call finishes, the watcher recomputes the session's live context size; if it has
+reached the effective threshold, it asks OpenCode to compact the session, and
+OpenCode runs that at the next safe point.
 
 ### Measuring "how full" the session is
 
@@ -187,20 +170,6 @@ The command produces no chat output. Its result is appended to
 ```
 compaction threshold set to 5k for ses_… and its children (model limit 131.1k)
 compaction requested (ses_…) — used 7686 >= threshold 5000
-```
-
-## Module map
-
-```
-index.ts            root shim -> src/index.ts
-src/index.ts        plugin entry: options, command, watcher, event loop, cleanup
-src/command.ts      /autocompact handling (set / status / off + limit validation)
-src/thresholds.ts   storage + parent-chain inheritance resolver (+ cache)
-src/used.ts         live context size from session messages
-src/watch.ts        event stream -> threshold check -> session.compact
-src/parse.ts        argument parsing + token formatting
-src/options.ts      ctx.options parsing
-src/log.ts          daemon-safe file + stderr logging
 ```
 
 ## Development
