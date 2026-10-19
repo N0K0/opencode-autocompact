@@ -30,10 +30,11 @@ function themeColor(theme: unknown, path: string): string | undefined {
   return typeof node === "string" ? node : undefined
 }
 
-/** The one-line footer chip, or undefined when autocompact is idle (nothing to say). */
+/** The one-line footer chip. Idle states are shown too, so the plugin is visible. */
 function chipLabel(status: RpcStatus | undefined): string | undefined {
-  if (!status || status.source === "none") return undefined
+  if (!status) return undefined
   if (status.source === "off") return "autocompact off"
+  if (status.source === "none") return "autocompact auto"
   const threshold = status.threshold !== null ? formatTokens(status.threshold) : "?"
   if (status.used === null) return `autocompact ≤${threshold}`
   return `autocompact ${formatTokens(status.used)}/${threshold}`
