@@ -55,7 +55,7 @@ that, for one session, without touching anyone else's config.
 ## Install
 
 ```sh
-opencode plugin add @hacky.software/opencode-autocompact@0.1.6
+opencode plugin add @hacky.software/opencode-autocompact@0.1.7
 ```
 
 > **OpenCode 2.0.32 packaging note:** TUI entries installed from npm are
